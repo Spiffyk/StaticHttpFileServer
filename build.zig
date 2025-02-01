@@ -31,6 +31,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    b.installArtifact(serve_exe);
     serve_exe.root_module.addImport("StaticHttpFileServer", module);
     const run_serve_exe = b.addRunArtifact(serve_exe);
     if (b.args) |args| run_serve_exe.addArgs(args);
