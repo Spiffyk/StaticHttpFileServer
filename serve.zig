@@ -14,6 +14,7 @@ pub fn main() !void {
     const args = try std.process.argsAlloc(arena);
 
     var listen_port: u16 = 0;
+    var address_str_arg: ?[]const u8 = null;
     var opt_root_dir_path: ?[]const u8 = null;
 
     {
@@ -27,6 +28,10 @@ pub fn main() !void {
                     listen_port = std.fmt.parseInt(u16, args[i], 10) catch |err| {
                         fatal("unable to parse port '{s}': {s}", .{ args[i], @errorName(err) });
                     };
+                } else if (std.mem.eql(u8, arg, "-l")) {
+                    i += 1;
+                    if (i >= args.len) fatal("expected arg after '{s}'", .{arg});
+                    address_str_arg = args[i];
                 } else {
                     fatal("unrecognized argument: '{s}'", .{arg});
                 }
@@ -53,12 +58,18 @@ pub fn main() !void {
     const epoll = std.posix.epoll_create1(0) catch |err|
         fatal("unable to create an epoll: {s}", .{@errorName(err)});
 
-    const address = try std.net.Address.parseIp("127.0.0.1", listen_port);
+    const address_str = address_str_arg orelse "127.0.0.1";
+    const address = try std.net.Address.parseIp(address_str, listen_port);
     var http_server = try address.listen(.{
         .reuse_address = true,
     });
     const port = http_server.listen_address.in.getPort();
-    std.debug.print("Listening at http://127.0.0.1:{d}/\n", .{port});
+    std.debug.print("Listening at http://{s}{s}{s}:{d}/\n", .{
+        if (address.any.family == std.posix.AF.INET6) "[" else "",
+        address_str,
+        if (address.any.family == std.posix.AF.INET6) "]" else "",
+        port,
+    });
 
     var events: [10]std.os.linux.epoll_event = undefined;
     {
