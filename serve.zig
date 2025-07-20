@@ -96,8 +96,8 @@ pub fn main() !void {
                 };
                 std.posix.epoll_ctl(epoll, EPOLL.CTL_ADD, conn.stream.handle, &ctl_ev) catch |err| {
                     std.debug.print(
-                        "could not epoll peer '{}': {s}\n",
-                        .{ conn.address, @errorName(err) },
+                        "could not epoll peer '{f}': {t}\n",
+                        .{ conn.address, err },
                     );
                     continue :events;
                 };
@@ -107,7 +107,7 @@ pub fn main() !void {
                 defer {
                     std.posix.epoll_ctl(epoll, EPOLL.CTL_DEL, server.connection.stream.handle, null) catch |err| {
                         std.debug.print(
-                            "could not remove peer '{}' from epoll: {s}\n",
+                            "could not remove peer '{f}' from epoll: {s}\n",
                             .{ server.connection.address, @errorName(err) },
                         );
                     };
@@ -118,7 +118,7 @@ pub fn main() !void {
                 if (server.state == .ready) {
                     var request = server.receiveHead() catch |err| {
                         std.debug.print(
-                            "recv error with peer {}: {s}\n",
+                            "recv error with peer {f}: {s}\n",
                             .{ server.connection.address, @errorName(err) },
                         );
                         continue :events;
